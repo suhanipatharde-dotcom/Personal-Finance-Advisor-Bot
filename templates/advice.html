@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Financial Advice</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #243b55;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 30px auto;
+        }
+
+        .summary {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .advice-box {
+            background: white;
+            padding: 25px;
+            margin-top: 30px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #243b55;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🤖 AI Financial Advice</h1>
+    <p>Your Personal Finance Advisor</p>
+</header>
+
+<div class="container">
+
+    <div class="summary">
+
+        <div class="card">
+            <h3>Income</h3>
+            <h2>₹{{ "%.2f"|format(income) }}</h2>
+        </div>
+
+        <div class="card">
+            <h3>Expenses</h3>
+            <h2>₹{{ "%.2f"|format(expenses) }}</h2>
+        </div>
+
+        <div class="card">
+            <h3>Savings</h3>
+            <h2>₹{{ "%.2f"|format(savings) }}</h2>
+        </div>
+
+    </div>
+
+    <div class="advice-box">
+
+        <h2>💡 Personalized Advice</h2>
+
+        <p>{{ advice }}</p>
+
+    </div>
+
+    <a href="/">← Back to Dashboard</a>
+
+</div>
+
+</body>
+</html>
