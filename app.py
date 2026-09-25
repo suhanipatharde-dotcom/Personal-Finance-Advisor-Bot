@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
+from ai_advisor import get_financial_advice
+
+
 app = Flask(__name__)
 
 DATABASE = "finance.db"
@@ -26,6 +29,7 @@ def init_db():
 
 @app.route("/")
 def home():
+
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
@@ -42,6 +46,7 @@ def home():
         FROM transactions
         WHERE transaction_type = 'income'
     """)
+
     income = cursor.fetchone()[0]
 
     cursor.execute("""
@@ -49,6 +54,7 @@ def home():
         FROM transactions
         WHERE transaction_type = 'expense'
     """)
+
     expenses = cursor.fetchone()[0]
 
     savings = income - expenses
@@ -66,6 +72,7 @@ def home():
 
 @app.route("/add", methods=["POST"])
 def add_transaction():
+
     transaction_type = request.form["transaction_type"]
     category = request.form["category"]
     amount = float(request.form["amount"])
@@ -78,7 +85,12 @@ def add_transaction():
         INSERT INTO transactions
         (transaction_type, category, amount, description)
         VALUES (?, ?, ?, ?)
-    """, (transaction_type, category, amount, description))
+    """, (
+        transaction_type,
+        category,
+        amount,
+        description
+    ))
 
     conn.commit()
     conn.close()
@@ -88,6 +100,7 @@ def add_transaction():
 
 @app.route("/delete/<int:transaction_id>")
 def delete_transaction(transaction_id):
+
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
@@ -100,6 +113,47 @@ def delete_transaction(transaction_id):
     conn.close()
 
     return redirect(url_for("home"))
+
+
+@app.route("/advice")
+def advice():
+
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM transactions
+        WHERE transaction_type = 'income'
+    """)
+
+    income = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM transactions
+        WHERE transaction_type = 'expense'
+    """)
+
+    expenses = cursor.fetchone()[0]
+
+    conn.close()
+
+    savings = income - expenses
+
+    financial_advice = get_financial_advice(
+        income,
+        expenses,
+        savings
+    )
+
+    return render_template(
+        "advice.html",
+        advice=financial_advice,
+        income=income,
+        expenses=expenses,
+        savings=savings
+    )
 
 
 if __name__ == "__main__":
