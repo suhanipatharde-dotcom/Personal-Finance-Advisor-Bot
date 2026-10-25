@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Finance Advisor</title>
+    <title>Personal Finance Advisor Bot</title>
 
     <style>
         body {
@@ -11,6 +12,7 @@
             background: #f4f7fb;
             margin: 0;
             padding: 0;
+            color: #243b55;
         }
 
         header {
@@ -32,37 +34,24 @@
             flex-wrap: wrap;
         }
 
-        .card {
+        .card, .form-box {
             background: white;
             padding: 20px;
             border-radius: 12px;
-            flex: 1;
-            min-width: 200px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
 
-        .card h3 {
-            margin-top: 0;
+        .card {
+            flex: 1;
+            min-width: 180px;
         }
 
-        .income {
-            color: green;
-        }
-
-        .expense {
-            color: red;
-        }
-
-        .saving {
-            color: #1565c0;
-        }
+        .income { color: green; }
+        .expense { color: #d32f2f; }
+        .saving { color: #1565c0; }
 
         .form-box {
-            background: white;
-            padding: 25px;
             margin-top: 30px;
-            border-radius: 12px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
 
         input, select, button {
@@ -72,17 +61,22 @@
             box-sizing: border-box;
         }
 
-        button {
+        button, .advice-link {
             background: #243b55;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
+            padding: 12px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
-            margin-top: 30px;
+            margin-top: 20px;
             background: white;
             border-collapse: collapse;
         }
@@ -97,20 +91,45 @@
             background: #243b55;
             color: white;
         }
+
+        .delete-form {
+            margin: 0;
+        }
+
+        .delete-button {
+            background: #c62828;
+            min-width: 80px;
+        }
+
+        .advice-link {
+            display: inline-block;
+            text-decoration: none;
+            margin-top: 25px;
+        }
+
+        .message {
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 6px;
+        }
     </style>
 </head>
 
 <body>
-
 <header>
     <h1>Personal Finance Advisor Bot</h1>
     <p>Track your money. Understand your spending. Save better.</p>
 </header>
 
-<div class="container">
+<main class="container">
 
-    <div class="cards">
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
 
+    <section class="cards">
         <div class="card">
             <h3>Total Income</h3>
             <h2 class="income">₹{{ "%.2f"|format(income) }}</h2>
@@ -125,25 +144,20 @@
             <h3>Your Savings</h3>
             <h2 class="saving">₹{{ "%.2f"|format(savings) }}</h2>
         </div>
+    </section>
 
-    </div>
-
-    <div class="form-box">
-
+    <section class="form-box">
         <h2>Add Transaction</h2>
 
-        <form action="/add" method="POST">
-
-            <label>Transaction Type</label>
-
-            <select name="transaction_type" required>
+        <form action="{{ url_for('add_transaction') }}" method="POST">
+            <label for="transaction_type">Transaction Type</label>
+            <select id="transaction_type" name="transaction_type" required>
                 <option value="income">Income</option>
                 <option value="expense">Expense</option>
             </select>
 
-            <label>Category</label>
-
-            <select name="category" required>
+            <label for="category">Category</label>
+            <select id="category" name="category" required>
                 <option value="Salary">Salary</option>
                 <option value="Food">Food</option>
                 <option value="Rent">Rent</option>
@@ -155,71 +169,66 @@
                 <option value="Other">Other</option>
             </select>
 
-            <label>Amount (₹)</label>
+            <label for="amount">Amount (₹)</label>
+            <input id="amount" type="number" name="amount"
+                   step="0.01" min="0.01"
+                   placeholder="Enter amount" required>
 
-            <input
-                type="number"
-                name="amount"
-                step="0.01"
-                min="0"
-                placeholder="Enter amount"
-                required
-            >
-
-            <label>Description</label>
-
-            <input
-                type="text"
-                name="description"
-                placeholder="Example: Monthly groceries"
-            >
+            <label for="description">Description</label>
+            <input id="description" type="text" name="description"
+                   maxlength="250" placeholder="Example: Monthly groceries">
 
             <button type="submit">Add Transaction</button>
-
         </form>
-
-    </div>
+    </section>
 
     <h2>Transaction History</h2>
 
-    <table>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction[1] }}</td>
+                    <td>{{ transaction[2] }}</td>
+                    <td>₹{{ "%.2f"|format(transaction[3]) }}</td>
+                    <td>{{ transaction[4] or "" }}</td>
+                    <td>
+                        <form class="delete-form"
+                              action="{{ url_for('delete_transaction', transaction_id=transaction[0]) }}"
+                              method="POST"
+                              onsubmit="return confirm('Delete this transaction?');">
+                            <button class="delete-button" type="submit">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No transactions yet. Add your first transaction above.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-        <tr>
-            <th>Type</th>
-            <th>Category</th>
-            <th>Amount</th>
-            <th>Description</th>
-        </tr>
+    <div style="text-align:center; margin:30px 0;">
+        <a class="advice-link" href="{{ url_for('advice') }}">
+            🤖 Get AI Financial Advice
+        </a>
+    </div>
 
-        {% for transaction in transactions %}
-
-        <tr>
-            <td>{{ transaction[0] }}</td>
-            <td>{{ transaction[1] }}</td>
-            <td>₹{{ "%.2f"|format(transaction[2]) }}</td>
-            <td>{{ transaction[3] }}</td>
-        </tr>
-
-        {% endfor %}
-
-    </table>
-
-    <div style="text-align: center; margin-top: 30px;">
-
-    <a href="/advice"
-       style="display: inline-block;
-              padding: 15px 25px;
-              background: #243b55;
-              color: white;
-              text-decoration: none;
-              border-radius: 8px;
-              font-size: 18px;">
-        🤖 Get AI Financial Advice
-    </a>
-
-</div>
-
-</div>
-
+</main>
 </body>
 </html>
+
