@@ -3,41 +3,57 @@ from google import genai
 
 
 def get_financial_advice(income, expenses, savings):
+    """Generate practical personal budgeting advice using Gemini."""
 
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        return "Gemini AI is not configured yet. Please add GEMINI_API_KEY in your deployment environment."
-
-    client = genai.Client(api_key=api_key)
-
-    prompt = f"""
-You are a personal finance advisor.
-
-User financial information:
-Monthly Income: ₹{income}
-Total Expenses: ₹{expenses}
-Current Savings: ₹{savings}
-
-Provide:
-
-1. A short summary of the user's financial situation.
-2. Two practical ways to reduce unnecessary spending.
-3. A suggested savings target.
-4. One simple budgeting tip.
-
-Keep the advice clear, practical and suitable for a normal individual.
-
-Do not recommend specific stocks, securities, or investments.
-"""
+        return (
+            "AI financial advice is not configured yet. "
+            "Please configure the GEMINI_API_KEY environment variable."
+        )
 
     try:
+        client = genai.Client(api_key=api_key)
+
+        prompt = f"""
+You are a personal budgeting assistant.
+
+The user's recorded financial totals are:
+Income: INR {income:.2f}
+Expenses: INR {expenses:.2f}
+Savings (income minus expenses): INR {savings:.2f}
+
+Provide:
+1. A short summary of the financial situation.
+2. Two practical ways to manage unnecessary spending.
+3. A realistic savings target based on the figures provided.
+4. One simple budgeting tip.
+
+Use clear, supportive language.
+Do not recommend specific stocks, securities, or investments.
+Do not claim that these totals represent a particular month
+unless the user has provided that information.
+Explain that this is general educational guidance, not
+professional financial advice.
+"""
+
         response = client.models.generate_content(
-            model="gemini-3.8-flash",
+            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
             contents=prompt
         )
 
-        return response.text or "No advice was generated."
+        advice = getattr(response, "text", None)
 
-    except Exception as e:
-        return f"Unable to generate AI advice: {str(e)}"
+        if advice and advice.strip():
+            return advice.strip()
+
+        return "The AI advisor returned no advice. Please try again later."
+
+    except Exception:
+        # Avoid displaying API keys or raw internal errors to users.
+        return (
+            "Sorry, financial advice is temporarily unavailable. "
+            "Please check your AI configuration and try again later."
+        )
+
